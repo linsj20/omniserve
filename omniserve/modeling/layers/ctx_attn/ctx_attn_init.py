@@ -6,10 +6,11 @@ from omniserve.modeling.models.llama_w4a8_unpad import LlamaForCausalLM as Llama
 from omniserve.modeling.models.llama_w8a8_unpad import LlamaForCausalLM as LlamaForCausalLMW8A8
 from omniserve.modeling.models.llama_w16a16_unpad import LlamaForCausalLM as LlamaForCausalLMW16A16
 from omniserve.modeling.models.mixtral_w4a8_unpad import MixtralForCausalLM as MixtralForCausalLMW4A8
+from omniserve.modeling.models.qwen3_w16a16_unpad import Qwen3ForCausalLM as Qwen3ForCausalLMW16A16
 
 
 def init_ctx_sparse_attn(
-    model: Union[LlamaForCausalLMW4A8, LlamaForCausalLMW8A8, LlamaForCausalLMW16A16, MixtralForCausalLMW4A8],
+    model: Union[LlamaForCausalLMW4A8, LlamaForCausalLMW8A8, LlamaForCausalLMW16A16, MixtralForCausalLMW4A8, Qwen3ForCausalLMW16A16],
     sp_attn_config: SpAttnConfig,
 ):
     device = next(model.parameters()).device
@@ -52,7 +53,7 @@ def init_ctx_sparse_attn(
             
 
 def init_sparse_kv_cache(
-    model: Union[LlamaForCausalLMW4A8, LlamaForCausalLMW8A8, LlamaForCausalLMW16A16, MixtralForCausalLMW4A8],
+    model: Union[LlamaForCausalLMW4A8, LlamaForCausalLMW8A8, LlamaForCausalLMW16A16, MixtralForCausalLMW4A8, Qwen3ForCausalLMW16A16],
     sp_attn_config: SpAttnConfig,
 ):
     def transform_sequence(tensor):

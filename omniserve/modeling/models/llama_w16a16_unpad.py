@@ -122,7 +122,7 @@ class LlamaAttention(nn.Module):
             assert tp_size % self.total_num_kv_heads == 0
         self.num_kv_heads = max(1, self.total_num_kv_heads // tp_size)
         num_kv_heads_replicas = max(1, tp_size // self.total_num_kv_heads)
-        self.head_dim = hidden_size // self.total_num_heads
+        self.head_dim = getattr(args, 'head_dim', hidden_size // self.total_num_heads)
         self.q_size = self.num_heads * self.head_dim
         self.kv_size = self.num_kv_heads * self.head_dim
         self.scaling = self.head_dim**-0.5
@@ -206,7 +206,9 @@ class LlamaAttention(nn.Module):
         input_metadata: InputMetadata,
     ):
         qkv = self.qkv_proj(hidden_states)
-
+        # QK-norm hook — overridden by subclasses (e.g. Qwen3)
+        if hasattr(self, '_apply_qk_norm'):
+            self._apply_qk_norm(qkv)
         # qkv = qkv.half()
         if input_metadata.is_prompt:
             if not hasattr(self, "cached_dynamic_sparse_page_idx"):
@@ -525,14 +527,12 @@ class LlamaForCausalLM(nn.Module):
         tp_size = 1
         tp_rank = 0
 
-        q_proj_shard_size = self.config.hidden_size // tp_size
+        _head_dim = getattr(self.config, 'head_dim',
+                            self.config.hidden_size // self.config.num_attention_heads)
+        q_proj_shard_size = self.config.num_attention_heads * _head_dim // tp_size
         num_kv_heads_replicas = max(1, tp_size // self.config.num_key_value_heads)
         num_kv_heads_per_gpu = max(1, self.config.num_key_value_heads // tp_size)
-        kv_proj_shard_size = (
-            self.config.hidden_size
-            // self.config.num_attention_heads
-            * num_kv_heads_per_gpu
-        )
+        kv_proj_shard_size = _head_dim * num_kv_heads_per_gpu
         attention_weight_specs = [
             # (weight_name, shard_size, offset)
             ("q_proj", q_proj_shard_size, 0),

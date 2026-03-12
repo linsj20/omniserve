@@ -1,16 +1,23 @@
 # model_name="Llama-3-8B-Instruct-Gradient-1048k"
-attn_path=./attn_patterns/Llama-3-8B-Instruct-Gradient-1048k
-model_path=./models/Llama-3-8B-Instruct-Gradient-1048k-w8a8-per-channel-kv8-per-tensor
+# model_name="Qwen/Qwen3-8B"
+attn_path=./attn_patterns/Qwen3-8B
+model_path=Qwen/Qwen3-8B
+
+#attn_path=./attn_patterns/Llama-3-8B-Instruct-Gradient-1048k
+#model_path=./models/Llama-3-8B-Instruct-Gradient-1048k-w8a8-per-channel-kv8-per-tensor
 
 
-if [ ! -d "$model_path" ]; then
-  mkdir -p models
-  cd models
-  git clone https://huggingface.co/mit-han-lab/Llama-3-8B-Instruct-Gradient-1048k-w8a8-per-channel-kv8-per-tensor
-  cd ..
-fi
+#if [ ! -d "$model_path" ]; then
+#  mkdir -p models
+#  huggingface-cli download \
+#    mit-han-lab/Llama-3-8B-Instruct-Gradient-1048k-w8a8-per-channel-kv8-per-tensor \
+#    --local-dir $model_path \
+#    --local-dir-use-symlinks False
+#fi
 
-precision="w8a8kv8"
+# For w16a16, weights are loaded directly from HuggingFace; no local download needed.
+
+precision="w16a16kv8"
 
 NUM_RETRIEVAL_GPU_PAGE_BLOCKS=3000 \
 NUM_STREAMING_GPU_PAGE_BLOCKS=200 \
@@ -18,7 +25,6 @@ python lserve_e2e_generation.py \
   --model $model_path \
   --ifb-mode \
   --precision $precision \
-  --quant-path $model_path \
   --group-size -1 \
   --max-num-batched-tokens 4195000 \
   --max-num-seqs 1 \

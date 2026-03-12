@@ -148,7 +148,9 @@ class SpAttnConfig:
             )
             full_attention_heads = np.clip(full_attention_heads, 0, 1)
             self.full_attention_heads = torch.tensor(_sparsify_attention_heads(full_attention_heads, self.static_sparsity), dtype=torch.int32)
-            config = json.load(open(os.path.join(self.static_sparse_attn_load_dir, "config.json")))
+            config_path = os.path.join(self.static_sparse_attn_load_dir, "config.json")
+            if os.path.exists(config_path):
+                config = json.load(open(config_path))
 
     
     def retrieval_head_num(self, layer_idx):

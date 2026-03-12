@@ -32,6 +32,7 @@ class ActivationBuffer:
         assert self.model_class in [
             "LlamaForCausalLM",
             "MixtralForCausalLM",
+            "Qwen3ForCausalLM",
         ], f"model_class: {self.model_class} is currently not supported."
         assert (
             self.model_dtype == torch.float16
@@ -48,7 +49,7 @@ class ActivationBuffer:
         self.hidden_size = model.config.hidden_size
 
     def allocate_activation_buffer(self):
-        if self.model_class == "LlamaForCausalLM":
+        if self.model_class in ("LlamaForCausalLM", "Qwen3ForCausalLM"):
             self.__allocate_activation_buffer_llama()
         elif self.model_class == "MixtralForCausalLM":
             raise NotImplementedError("MixtralForCausalLM is not supported yet.")

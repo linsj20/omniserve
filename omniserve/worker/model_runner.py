@@ -37,6 +37,9 @@ from omniserve.modeling.models.llama_w16a16_unpad import (
 from omniserve.modeling.models.mixtral_w4a8_unpad import (
     MixtralForCausalLM as MixtralForCausalLMW4A8,
 )
+from omniserve.modeling.models.qwen3_w16a16_unpad import (
+    Qwen3ForCausalLM as Qwen3ForCausalLMW16A16,
+)
 from omniserve.sampling_params import SamplingParams
 from omniserve.sequence import SamplerOutput, SequenceGroupMetadata
 from omniserve.utils.input_metadata import InputMetadata
@@ -134,6 +137,9 @@ class ModelRunner:
                 )
             elif "w16a16" in precision:
                 print(f"[INFO] Using {precision} precision")
+                # For w16a16 there is no quantized checkpoint; load from the HF
+                # model ID (or local path) directly when no --quant-path given.
+                effective_quant_path = quant_path if quant_path is not None else self.model_config.model
                 self.model = (
                     LlamaForCausalLMW16A16(
                         self.model_config.hf_config,
@@ -142,7 +148,7 @@ class ModelRunner:
                             temperature=1.0, top_p=1.0, top_k=1, max_tokens=512
                         ),
                         kv_cache_config=self.kv_cache_config,
-                        quant_path=quant_path,
+                        quant_path=effective_quant_path,
                     )
                     .half()
                     .to(self.device)
@@ -170,6 +176,29 @@ class ModelRunner:
                 raise ValueError(
                     f"Unsupported model precision: {precision}. Expected w4a8."
                 ) # add by JXGuo: secure the model to be CausalLM
+        elif model_type == "Qwen3ForCausalLM":
+            if "w16a16" in precision:
+                print(f"[INFO] Using {precision} precision")
+                # For w16a16 there is no quantized checkpoint; load from the HF
+                # model ID (or local path) directly when no --quant-path given.
+                effective_quant_path = quant_path if quant_path is not None else self.model_config.model
+                self.model = (
+                    Qwen3ForCausalLMW16A16(
+                        self.model_config.hf_config,
+                        self.model_config,
+                        SamplingParams(
+                            temperature=1.0, top_p=1.0, top_k=1, max_tokens=512
+                        ),
+                        kv_cache_config=self.kv_cache_config,
+                        quant_path=effective_quant_path,
+                    )
+                    .half()
+                    .to(self.device)
+                )
+            else:
+                raise ValueError(
+                    f"Unsupported model precision: {precision}. Expected w16a16."
+                )
         else:
             raise ValueError(f"Unsupported model type: {model_type}.")
         self.block_size = None  # Set after initial profiling.

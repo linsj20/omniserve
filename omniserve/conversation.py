@@ -13,6 +13,8 @@ def get_conv_template_name(model):
     model_path = model.lower()
     if "yi" in model_path:
         return "Yi-34b-chat"
+    elif "qwen3" in model_path:
+        return "qwen-7b-chat"  # Qwen3 uses the same ChatML format (stop tokens 151643/151645)
     elif "qwen" in model_path:
         return "qwen-7b-chat"
     elif "vicuna" in model_path:
